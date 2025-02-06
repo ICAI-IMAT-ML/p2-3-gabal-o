@@ -36,8 +36,11 @@ class LinearRegressor:
             X = X.reshape(1, -1)
 
         # TODO: Train linear regression model with only one coefficient
-        self.coefficients = None
-        self.intercept = None
+        x_mean=X.mean()
+        y_mean=y.mean()
+        covar_mat=np.cov(X,y)
+        self.coefficients = covar_mat[0,1] / covar_mat[0,0] 
+        self.intercept= y_mean-x_mean*self.coefficients
 
     # This part of the model you will only need for the last part of the notebook
     def fit_multiple(self, X, y):
@@ -54,9 +57,15 @@ class LinearRegressor:
         Returns:
             None: Modifies the model's coefficients and intercept in-place.
         """
-        # TODO: Train linear regression model with multiple coefficients
+        x = np.array(x)
+        y = np.array(y) 
+        
+        if y.ndim == 1:
+            y = y.reshape(-1, 1)
+        
+        w = np.linalg.inv(x.T @ x) @ x.T @ y
         self.intercept = None
-        self.coefficients = None
+        self.coefficients = w
 
     def predict(self, X):
         """
