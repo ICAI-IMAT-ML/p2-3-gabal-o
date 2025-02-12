@@ -57,16 +57,16 @@ class LinearRegressor:
         Returns:
             None: Modifies the model's coefficients and intercept in-place.
         """
-        x = np.array(x)
-        y = np.array(y) 
+        # Add a column of ones to X for the intercept term
+        X_new = np.hstack((np.ones((X.shape[0], 1)), X))
         
-        if y.ndim == 1:
-            y = y.reshape(-1, 1)
+        # Compute the coefficients using the normal equation
+        theta = np.linalg.inv(X_new.T @ X_new) @ X_new.T @ y
         
-        w = np.linalg.inv(x.T @ x) @ x.T @ y
-        self.intercept = None
-        self.coefficients = w
-
+        # Store intercept and coefficients separately
+        self.intercept = theta[0]
+        self.coefficients = theta[1:]
+        
     def predict(self, X):
         """
         Predict the dependent variable values using the fitted model.
@@ -82,13 +82,11 @@ class LinearRegressor:
         """
         if self.coefficients is None or self.intercept is None:
             raise ValueError("Model is not yet fitted")
-
+        X = np.asarray(X)
         if np.ndim(X) == 1:
-            # TODO: Predict when X is only one variable
-            predictions = None
+            predictions = X*self.coefficients + self.intercept
         else:
-            # TODO: Predict when X is more than one variable
-            predictions = None
+            predictions = np.dot(X, self.coefficients) + self.intercept
         return predictions
 
 
@@ -105,15 +103,16 @@ def evaluate_regression(y_true, y_pred):
     """
     # R^2 Score
     # TODO: Calculate R^2
-    r_squared = None
-
+    ss_res = np.sum((y_true - y_pred)**2)
+    ss_tot = np.sum((y_true - np.mean(y_true))**2)
+    r_squared = 1 - (ss_res / ss_tot)
     # Root Mean Squared Error
     # TODO: Calculate RMSE
-    rmse = None
+    rmse = np.sqrt(np.mean((y_true-y_pred)**2))
 
     # Mean Absolute Error
     # TODO: Calculate MAE
-    mae = None
+    mae = np.mean(abs(y_true-y_pred))
 
     return {"R2": r_squared, "RMSE": rmse, "MAE": mae}
 
@@ -124,14 +123,14 @@ def evaluate_regression(y_true, y_pred):
 def sklearn_comparison(x, y, linreg):
     ### Compare your model with sklearn linear regression model
     # TODO : Import Linear regression from sklearn
-
+    from sklearn.linear_model import LinearRegression
     # Assuming your data is stored in x and y
     # TODO : Reshape x to be a 2D array, as scikit-learn expects 2D inputs for the features
-    x_reshaped = None
+    x_reshaped = x.reshape(-1,1)
 
     # Create and train the scikit-learn model
     # TODO : Train the LinearRegression model
-    sklearn_model = None
+    sklearn_model = LinearRegression()
     sklearn_model.fit(x_reshaped, y)
 
     # Now, you can compare coefficients and intercepts between your model and scikit-learn's model
@@ -153,7 +152,7 @@ def anscombe_quartet():
 
     # Anscombe's quartet consists of four datasets
     # TODO: Construct an array that contains, for each entry, the identifier of each dataset
-    datasets = None
+    datasets = anscombe["dataset"].unique()
 
     models = {}
     results = {"R2": [], "RMSE": [], "MAE": []}
@@ -161,21 +160,21 @@ def anscombe_quartet():
 
         # Filter the data for the current dataset
         # TODO
-        data = None
+        data = anscombe[anscombe['dataset'] == dataset]
 
         # Create a linear regression model
         # TODO
-        model = None
+        model = LinearRegressor()
 
         # Fit the model
         # TODO
-        X = None  # Predictor, make it 1D for your custom model
-        y = None  # Response
+        X = data['x'].values  # Predictor, make it 1D for your custom model
+        y = data['y'].values  # Response
         model.fit_simple(X, y)
 
         # Create predictions for dataset
         # TODO
-        y_pred = None
+        y_pred = model.predict(X)
 
         # Store the model for later use
         models[dataset] = model
@@ -194,7 +193,7 @@ def anscombe_quartet():
         results["R2"].append(evaluation_metrics["R2"])
         results["RMSE"].append(evaluation_metrics["RMSE"])
         results["MAE"].append(evaluation_metrics["MAE"])
-    return results
+    return anscombe,datasets,models,results
 
 
 # Go to the notebook to visualize the results
